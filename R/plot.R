@@ -30,6 +30,7 @@
 #'        With intercept of one, this essentially overlays the curves, and plotting a diagram is suppressed as in the case of a SC estimate.
 #'	  To use different values for different plots, pass these values as an attribute 'overlay' of each estimate.
 #'        If a vector is passed, plots at different intercept levels indicated by the 'frame' aesthetic. ggplotly will interpret this as an animation.
+#' @param center.on.control, if TRUE, all trajectories are centered on the synthetic control's trajectory
 #' @param lambda.plot.scale determines the scale of the plot of the weights lambda.
 #' @param trajectory.linetype, the linetype of the treated and synthetic control trajectories
 #' @param effect.curvature, the curvature of the arrows indicating the treatment effect. Defaults to zero.
@@ -53,7 +54,7 @@
 #' @export synthdid_plot
 synthdid_plot = function(estimates, treated.name = 'treated', control.name = 'synthetic control', 
 			 spaghetti.units = c(), spaghetti.matrices = NULL,
-                         facet = NULL, facet.vertical = TRUE, lambda.comparable = !is.null(facet), overlay = 0,
+                         facet = NULL, facet.vertical = TRUE, lambda.comparable = !is.null(facet), overlay = 0, center.on.control=FALSE,
                          lambda.plot.scale = 3, trajectory.linetype = 1, effect.curvature = .3, line.width = .5, guide.linetype = 2, point.size = 1,
                          trajectory.alpha = .5, diagram.alpha = .95, effect.alpha = .95, onset.alpha = .3, ci.alpha=.3,
 			 spaghetti.line.width = .2, spaghetti.label.size = 2, 
@@ -109,6 +110,12 @@ synthdid_plot = function(estimates, treated.name = 'treated', control.name = 'sy
 	if(is.null(rownames(more.spaghetti.trajectories))) { stop('The elements of the list spaghetti.matrices must have named rows') }
 	spaghetti.trajectories = rbind(spaghetti.trajectories, more.spaghetti.trajectories)
     } 
+
+    if(center.on.control) { 
+	obs.trajectory = obs.trajectory - syn.trajectory
+	syn.trajectory = syn.trajectory - syn.trajectory
+	spaghetti.trajectories = t(apply(spaghetti.trajectories, 1, function(row) { row - syn.trajectory }))
+    }
 
     treated.post = omega.target %*% Y %*% lambda.target
     treated.pre = omega.target %*% Y %*% lambda.synth
