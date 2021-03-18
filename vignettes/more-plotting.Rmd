@@ -56,6 +56,14 @@ With fewer of these trajectories, we can make the lines a little more opaque wit
   plot(estimate, spaghetti.matrices=list(spaghetti.matrices), spaghetti.line.alpha=.4)
 ```
 
+We can re-center period by period, making the synthetic control the x-axis, to show a kind of event study plot
+```{r, fig.width=7.5, fig.height=4}
+  plot(estimate, spaghetti.units=rownames(top.controls), center.on.control=TRUE)
+```
+
+
+
+
 # Simplifying the Control Unit Contribution Plot
 When we have too many control units, the control unit contribution plot can be too dense to read. 
 We can restrict the units we plot by passing a list of names.
