@@ -100,7 +100,8 @@ synthdid_plot = function(estimates, treated.name = 'treated', control.name = 'sy
     if (!is.null(attr(est, 'overlay'))) { over = attr(est, 'overlay') } 
     is.sc = all(weights$lambda == 0) || over==1
 
-    intercept.offset = over * c((omega.target - omega.synth) %*% Y %*% lambda.synth)
+    intercept = c((omega.target - omega.synth) %*% Y %*% lambda.synth)
+    intercept.offset = over * intercept
     obs.trajectory = as.numeric(omega.target %*% Y)
     syn.trajectory = as.numeric(omega.synth %*% Y) + intercept.offset
     spaghetti.trajectories = Y[rownames(Y) %in% spaghetti.units, , drop=FALSE] 
@@ -111,22 +112,30 @@ synthdid_plot = function(estimates, treated.name = 'treated', control.name = 'sy
 	spaghetti.trajectories = rbind(spaghetti.trajectories, more.spaghetti.trajectories)
     } 
 
-    if(center.on.control) { 
-	obs.trajectory = obs.trajectory - syn.trajectory
-	syn.trajectory = syn.trajectory - syn.trajectory
-	spaghetti.trajectories = t(apply(spaghetti.trajectories, 1, function(row) { row - syn.trajectory }))
-    }
-
     treated.post = omega.target %*% Y %*% lambda.target
     treated.pre = omega.target %*% Y %*% lambda.synth
     control.post = omega.synth %*% Y %*% lambda.target + intercept.offset
     control.pre = omega.synth %*% Y %*% lambda.synth + intercept.offset
+
+    if(center.on.control) { 
+	obs.trajectory = obs.trajectory - intercept - syn.trajectory
+	if(nrow(spaghetti.trajectories) > 0) { 
+	    spaghetti.trajectories = t(apply(spaghetti.trajectories, 1, function(row) { row - intercept - syn.trajectory }))
+	}
+	syn.trajectory = 0 * syn.trajectory
+	treated.pre = treated.pre - intercept - control.pre
+	treated.post = treated.post - intercept - control.post
+	control.pre = 0
+	control.post = 0 
+    }
     sdid.post = as.numeric(control.post + treated.pre - control.pre)
+
 
     time = as.numeric(timesteps(Y))
     if (length(time) == 0 || !all(is.finite(time))) { time = 1:(T0 + T1) }
     pre.time = lambda.synth %*% time
     post.time = lambda.target %*% time
+
 
     # construct objects on graph
     lines = data.frame(x = rep(time, 2),
